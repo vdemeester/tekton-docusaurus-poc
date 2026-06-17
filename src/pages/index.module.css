@@ -1,0 +1,41 @@
+.heroBanner {
+  padding: 5rem 0;
+  text-align: center;
+  position: relative;
+  overflow: hidden;
+  color: #fff;
+  background: linear-gradient(135deg, #1c64f2 0%, #1445a8 100%);
+}
+
+.heroTitle {
+  font-size: 3rem;
+  font-weight: 800;
+  margin-bottom: 1rem;
+}
+
+.heroSubtitle {
+  max-width: 720px;
+  margin: 0 auto 2rem;
+  font-size: 1.2rem;
+  opacity: 0.95;
+}
+
+.buttons {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.features {
+  padding: 3rem 0;
+}
+
+.actions {
+  padding: 3rem 0;
+  background: var(--ifm-color-emphasis-100);
+}
+
+.actions h3 {
+  margin-bottom: 1rem;
+}

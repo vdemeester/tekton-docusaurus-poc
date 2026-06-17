@@ -1,0 +1,19 @@
+{
+  "_comment": "Per-component support policy (PoC for #732). Mirrors data that already lives in sync/config/<component>.yaml (displayName -LTS + supportEnds). Drives the deprecation banner. Rule: supported = the listed LTS releases + latest; everything else = deprecated.",
+  "pipelines": {
+    "policy": "4 LTS + latest",
+    "versions": {
+      "main":   { "status": "development" },
+      "1.12.x": { "status": "supported", "lts": true,  "supportEnds": "2026-09-01" },
+      "1.9.x":  { "status": "deprecated", "lts": true,  "supportEnds": "2026-01-01" }
+    }
+  },
+  "operator": {
+    "policy": "4 LTS + latest",
+    "versions": {
+      "main":   { "status": "development" },
+      "0.79.x": { "status": "supported", "lts": true, "supportEnds": "2027-03-05" },
+      "0.78.x": { "status": "deprecated", "lts": true, "supportEnds": "2026-12-08" }
+    }
+  }
+}

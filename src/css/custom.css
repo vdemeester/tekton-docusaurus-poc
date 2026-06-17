@@ -1,0 +1,56 @@
+/**
+ * Theming spike (PoC for tektoncd/website#732).
+ * Time-boxed: Tekton brand blue applied purely via Infima CSS variables —
+ * no component overrides. Goal is to rate theming ergonomics, not to match
+ * the proposed refresh pixel-for-pixel.
+ *
+ * Finding: primary palette, fonts, navbar/footer recolor are ~15 min of
+ * variable edits. Deeper layout/IA changes (hero, mega-menu like the refresh)
+ * would require swizzling React components — a larger, separate effort.
+ */
+
+/* Tekton brand blue (#0e6ffd-ish family) */
+:root {
+  --ifm-color-primary: #1c64f2;
+  --ifm-color-primary-dark: #1a5ad9;
+  --ifm-color-primary-darker: #1854cd;
+  --ifm-color-primary-darkest: #1445a8;
+  --ifm-color-primary-light: #356ff4;
+  --ifm-color-primary-lighter: #4179f4;
+  --ifm-color-primary-lightest: #6a96f7;
+  --ifm-code-font-size: 95%;
+  --ifm-font-family-base: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+}
+
+[data-theme='dark'] {
+  --ifm-color-primary: #6a96f7;
+  --ifm-color-primary-dark: #4179f4;
+  --ifm-color-primary-darker: #356ff4;
+  --ifm-color-primary-darkest: #1c64f2;
+  --ifm-color-primary-light: #8aabf9;
+  --ifm-color-primary-lighter: #9bb8fa;
+  --ifm-color-primary-lightest: #c0d2fc;
+  --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+}
+
+/* --- Contextual, labeled version dropdowns (PoC #732) ---
+ * Show only the version dropdown for the component currently being viewed,
+ * and prefix it with the component name so it is never ambiguous. Driven by
+ * the data-active-docs attribute set in src/clientModules/activeDocs.ts. */
+.navbar-version--pipelines,
+.navbar-version--operator {
+  display: none;
+}
+html[data-active-docs='pipelines'] .navbar-version--pipelines,
+html[data-active-docs='operator'] .navbar-version--operator {
+  display: flex;
+}
+.navbar-version--pipelines > .navbar__link::before {
+  content: 'Pipelines ';
+  opacity: 0.7;
+}
+.navbar-version--operator > .navbar__link::before {
+  content: 'Operator ';
+  opacity: 0.7;
+}
