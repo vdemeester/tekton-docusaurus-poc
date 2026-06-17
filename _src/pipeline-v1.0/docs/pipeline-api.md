@@ -857,21 +857,6 @@ with those declared in the pipeline.</p>
 <p>TaskRunSpecs holds a set of runtime specs</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -1013,8 +998,8 @@ source mounted into /workspace.</p>
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="#tekton.dev/v1.Volumes">
-Volumes
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+[]Kubernetes core/v1.Volume
 </a>
 </em>
 </td>
@@ -1338,21 +1323,6 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <p>Compute resources to use for this TaskRun</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
 </td>
 </tr>
 </table>
@@ -2531,21 +2501,6 @@ with those declared in the pipeline.</p>
 <p>TaskRunSpecs holds a set of runtime specs</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="tekton.dev/v1.PipelineRunSpecStatus">PipelineRunSpecStatus
@@ -3095,7 +3050,7 @@ Kubernetes meta/v1.Duration
 </td>
 <td>
 <em>(Optional)</em>
-<p>Duration after which the TaskRun times out. Defaults to 1 hour.
+<p>Time after which the TaskRun times out. Defaults to 1 hour.
 Refer Go&rsquo;s ParseDuration documentation for expected format: <a href="https://golang.org/pkg/time/#ParseDuration">https://golang.org/pkg/time/#ParseDuration</a></p>
 </td>
 </tr>
@@ -3371,23 +3326,6 @@ Kubernetes core/v1.ResourceRequirements
 </td>
 <td>
 <p>Compute resources to use for this TaskRun</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>timeout</code><br/>
-<em>
-<a href="https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#Duration">
-Kubernetes meta/v1.Duration
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Duration after which the TaskRun times out. Overrides the timeout specified
-on the Task&rsquo;s spec if specified. Takes lower precedence to PipelineRun&rsquo;s
-<code>spec.timeouts.tasks</code>
-Refer Go&rsquo;s ParseDuration documentation for expected format: <a href="https://golang.org/pkg/time/#ParseDuration">https://golang.org/pkg/time/#ParseDuration</a></p>
 </td>
 </tr>
 </tbody>
@@ -3817,13 +3755,6 @@ this ResultsType.</p>
 <td></td>
 </tr></tbody>
 </table>
-<h3 id="tekton.dev/v1.RetriesStatus">RetriesStatus
-(<code>[]github.com/tektoncd/pipeline/pkg/apis/pipeline/v1.TaskRunStatus</code> alias)</h3>
-<p>
-(<em>Appears on:</em><a href="#tekton.dev/v1.TaskRunStatusFields">TaskRunStatusFields</a>)
-</p>
-<div>
-</div>
 <h3 id="tekton.dev/v1.Sidecar">Sidecar
 </h3>
 <p>
@@ -4452,19 +4383,6 @@ string
 <td>
 <p>Name of the Step specified as a DNS_LABEL.
 Each Step in a Task must have a unique name.</p>
-</td>
-</tr>
-<tr>
-<td>
-<code>displayName</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>DisplayName is a user-facing name of the step that may be
-used to populate a UI.</p>
 </td>
 </tr>
 <tr>
@@ -5878,21 +5796,6 @@ Kubernetes core/v1.ResourceRequirements
 <p>Compute resources to use for this TaskRun</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="tekton.dev/v1.TaskRunSpecStatus">TaskRunSpecStatus
@@ -5930,7 +5833,7 @@ TaskRun was a part of has been cancelled.</p>
 <h3 id="tekton.dev/v1.TaskRunStatus">TaskRunStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#tekton.dev/v1.TaskRun">TaskRun</a>, <a href="#tekton.dev/v1.PipelineRunTaskRunStatus">PipelineRunTaskRunStatus</a>)
+(<em>Appears on:</em><a href="#tekton.dev/v1.TaskRun">TaskRun</a>, <a href="#tekton.dev/v1.PipelineRunTaskRunStatus">PipelineRunTaskRunStatus</a>, <a href="#tekton.dev/v1.TaskRunStatusFields">TaskRunStatusFields</a>)
 </p>
 <div>
 <p>TaskRunStatus defines the observed state of TaskRun</p>
@@ -6049,8 +5952,8 @@ Kubernetes meta/v1.Time
 <td>
 <code>retriesStatus</code><br/>
 <em>
-<a href="#tekton.dev/v1.RetriesStatus">
-RetriesStatus
+<a href="#tekton.dev/v1.TaskRunStatus">
+[]TaskRunStatus
 </a>
 </em>
 </td>
@@ -6277,8 +6180,8 @@ source mounted into /workspace.</p>
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="#tekton.dev/v1.Volumes">
-Volumes
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+[]Kubernetes core/v1.Volume
 </a>
 </em>
 </td>
@@ -6401,13 +6304,6 @@ Kubernetes meta/v1.Duration
 </tr>
 </tbody>
 </table>
-<h3 id="tekton.dev/v1.Volumes">Volumes
-(<code>[]k8s.io/api/core/v1.Volume</code> alias)</h3>
-<p>
-(<em>Appears on:</em><a href="#tekton.dev/v1.TaskSpec">TaskSpec</a>)
-</p>
-<div>
-</div>
 <h3 id="tekton.dev/v1.WhenExpression">WhenExpression
 </h3>
 <p>
@@ -9273,21 +9169,6 @@ with those declared in the pipeline.</p>
 <p>TaskRunSpecs holds a set of runtime specs</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -9416,9 +9297,7 @@ More info: <a href="https://kubernetes.io/docs/tasks/inject-data-application/def
 <td>
 <code>args</code><br/>
 <em>
-<a href="#tekton.dev/v1beta1.Args">
-Args
-</a>
+[]string
 </em>
 </td>
 <td>
@@ -9683,8 +9562,8 @@ source mounted into /workspace.</p>
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="#tekton.dev/v1beta1.Volumes">
-Volumes
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+[]Kubernetes core/v1.Volume
 </a>
 </em>
 </td>
@@ -10025,21 +9904,6 @@ Kubernetes core/v1.ResourceRequirements
 <p>Compute resources to use for this TaskRun</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
-</td>
-</tr>
 </table>
 </td>
 </tr>
@@ -10062,13 +9926,6 @@ TaskRunStatus
 (<code>string</code> alias)</h3>
 <div>
 <p>Algorithm Standard cryptographic hash algorithm</p>
-</div>
-<h3 id="tekton.dev/v1beta1.Args">Args
-(<code>[]string</code> alias)</h3>
-<p>
-(<em>Appears on:</em><a href="#tekton.dev/v1beta1.StepActionSpec">StepActionSpec</a>)
-</p>
-<div>
 </div>
 <h3 id="tekton.dev/v1beta1.ArrayOrString">ArrayOrString
 </h3>
@@ -11795,21 +11652,6 @@ with those declared in the pipeline.</p>
 <p>TaskRunSpecs holds a set of runtime specs</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="tekton.dev/v1beta1.PipelineRunSpecStatus">PipelineRunSpecStatus
@@ -12423,7 +12265,7 @@ Kubernetes meta/v1.Duration
 </td>
 <td>
 <em>(Optional)</em>
-<p>Duration after which the TaskRun times out. Defaults to 1 hour.
+<p>Time after which the TaskRun times out. Defaults to 1 hour.
 Refer Go&rsquo;s ParseDuration documentation for expected format: <a href="https://golang.org/pkg/time/#ParseDuration">https://golang.org/pkg/time/#ParseDuration</a></p>
 </td>
 </tr>
@@ -12833,21 +12675,6 @@ Kubernetes core/v1.ResourceRequirements
 <p>Compute resources to use for this TaskRun</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>timeout</code><br/>
-<em>
-<a href="https://godoc.org/k8s.io/apimachinery/pkg/apis/meta/v1#Duration">
-Kubernetes meta/v1.Duration
-</a>
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>Duration after which the TaskRun times out.
-Refer Go&rsquo;s ParseDuration documentation for expected format: <a href="https://golang.org/pkg/time/#ParseDuration">https://golang.org/pkg/time/#ParseDuration</a></p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="tekton.dev/v1beta1.PipelineWorkspaceDeclaration">PipelineWorkspaceDeclaration
@@ -13255,13 +13082,6 @@ Used to distinguish between a single string and an array of strings.
 Note that there is ResultType used to find out whether a
 RunResult is from a task result or not, which is different from
 this ResultsType.</p>
-</div>
-<h3 id="tekton.dev/v1beta1.RetriesStatus">RetriesStatus
-(<code>[]github.com/tektoncd/pipeline/pkg/apis/pipeline/v1beta1.TaskRunStatus</code> alias)</h3>
-<p>
-(<em>Appears on:</em><a href="#tekton.dev/v1beta1.TaskRunStatusFields">TaskRunStatusFields</a>)
-</p>
-<div>
 </div>
 <h3 id="tekton.dev/v1beta1.RunObject">RunObject
 </h3>
@@ -13864,19 +13684,6 @@ Each Step in a Task must have a unique name.</p>
 </tr>
 <tr>
 <td>
-<code>displayName</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>DisplayName is a user-facing name of the step that may be
-used to populate a UI.</p>
-</td>
-</tr>
-<tr>
-<td>
 <code>image</code><br/>
 <em>
 string
@@ -14440,9 +14247,7 @@ More info: <a href="https://kubernetes.io/docs/tasks/inject-data-application/def
 <td>
 <code>args</code><br/>
 <em>
-<a href="#tekton.dev/v1beta1.Args">
-Args
-</a>
+[]string
 </em>
 </td>
 <td>
@@ -15944,21 +15749,6 @@ Kubernetes core/v1.ResourceRequirements
 <p>Compute resources to use for this TaskRun</p>
 </td>
 </tr>
-<tr>
-<td>
-<code>managedBy</code><br/>
-<em>
-string
-</em>
-</td>
-<td>
-<em>(Optional)</em>
-<p>ManagedBy indicates which controller is responsible for reconciling
-this resource. If unset or set to &ldquo;tekton.dev/pipeline&rdquo;, the default
-Tekton controller will manage this resource.
-This field is immutable.</p>
-</td>
-</tr>
 </tbody>
 </table>
 <h3 id="tekton.dev/v1beta1.TaskRunSpecStatus">TaskRunSpecStatus
@@ -15980,7 +15770,7 @@ This field is immutable.</p>
 <h3 id="tekton.dev/v1beta1.TaskRunStatus">TaskRunStatus
 </h3>
 <p>
-(<em>Appears on:</em><a href="#tekton.dev/v1beta1.TaskRun">TaskRun</a>, <a href="#tekton.dev/v1beta1.PipelineRunTaskRunStatus">PipelineRunTaskRunStatus</a>)
+(<em>Appears on:</em><a href="#tekton.dev/v1beta1.TaskRun">TaskRun</a>, <a href="#tekton.dev/v1beta1.PipelineRunTaskRunStatus">PipelineRunTaskRunStatus</a>, <a href="#tekton.dev/v1beta1.TaskRunStatusFields">TaskRunStatusFields</a>)
 </p>
 <div>
 <p>TaskRunStatus defines the observed state of TaskRun</p>
@@ -16115,8 +15905,8 @@ CloudEventResource.</p>
 <td>
 <code>retriesStatus</code><br/>
 <em>
-<a href="#tekton.dev/v1beta1.RetriesStatus">
-RetriesStatus
+<a href="#tekton.dev/v1beta1.TaskRunStatus">
+[]TaskRunStatus
 </a>
 </em>
 </td>
@@ -16364,8 +16154,8 @@ source mounted into /workspace.</p>
 <td>
 <code>volumes</code><br/>
 <em>
-<a href="#tekton.dev/v1beta1.Volumes">
-Volumes
+<a href="https://kubernetes.io/docs/reference/generated/kubernetes-api/v1.24/#volume-v1-core">
+[]Kubernetes core/v1.Volume
 </a>
 </em>
 </td>
@@ -16488,13 +16278,6 @@ Kubernetes meta/v1.Duration
 </tr>
 </tbody>
 </table>
-<h3 id="tekton.dev/v1beta1.Volumes">Volumes
-(<code>[]k8s.io/api/core/v1.Volume</code> alias)</h3>
-<p>
-(<em>Appears on:</em><a href="#tekton.dev/v1beta1.TaskSpec">TaskSpec</a>)
-</p>
-<div>
-</div>
 <h3 id="tekton.dev/v1beta1.WhenExpression">WhenExpression
 </h3>
 <p>

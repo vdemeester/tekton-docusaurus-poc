@@ -1,21 +1,22 @@
 {
-  "_comment": "Per-component support policy (PoC for #732). Mirrors data that already lives in sync/config/<component>.yaml (displayName -LTS + supportEnds). Drives the deprecation banner. Rule: supported = the LTS releases still within their support window + latest; everything past supportEnds = deprecated. Dates here are illustrative for components without an explicit supportEnds upstream.",
+  "_comment": "Per-component support policy (PoC for tektoncd/website#732). EOL dates are the REAL End-of-Life dates from each component's upstream releases.md. The banner computes supported vs deprecated by comparing eol to the current date at render time, so the data stays correct over time without manual status flags. Tekton policy: 4 LTS releases + latest are supported concurrently.",
+  "policy": "4 LTS + latest",
   "pipelines": {
-    "policy": "4 LTS + latest",
+    "releasesUrl": "https://github.com/tektoncd/pipeline/blob/main/releases.md",
     "versions": {
-      "main":   { "status": "development" },
-      "1.12.x": { "status": "supported", "lts": true, "supportEnds": "2026-09-01" },
-      "1.9.x":  { "status": "supported", "lts": true, "supportEnds": "2026-12-01" },
-      "1.6.x":  { "status": "deprecated", "lts": true, "supportEnds": "2025-05-01" }
+      "main":   { "lts": false, "eol": null },
+      "1.12.x": { "lts": true,  "eol": "2027-05-04" },
+      "1.9.x":  { "lts": true,  "eol": "2027-01-30" },
+      "1.0.x":  { "lts": true,  "eol": "2026-04-29" }
     }
   },
   "operator": {
-    "policy": "4 LTS + latest",
+    "releasesUrl": "https://github.com/tektoncd/operator/blob/main/releases.md",
     "versions": {
-      "main":   { "status": "development" },
-      "0.79.x": { "status": "supported", "lts": true, "supportEnds": "2027-03-05" },
-      "0.78.x": { "status": "supported", "lts": true, "supportEnds": "2026-12-08" },
-      "0.76.x": { "status": "deprecated", "lts": true, "supportEnds": "2026-02-18" }
+      "main":   { "lts": false, "eol": null },
+      "0.79.x": { "lts": true,  "eol": "2027-04-01" },
+      "0.78.x": { "lts": true,  "eol": "2026-12-08" },
+      "0.76.x": { "lts": true,  "eol": "2026-05-27" }
     }
   }
 }

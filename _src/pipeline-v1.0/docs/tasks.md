@@ -20,7 +20,6 @@ weight: 201
     - [Breakpoint on failure with `onError`](#breakpoint-on-failure-with-onerror)
     - [Redirecting step output streams with `stdoutConfig` and `stderrConfig`](#redirecting-step-output-streams-with-stdoutconfig-and-stderrconfig)
     - [Guarding `Step` execution using `when` expressions](#guarding-step-execution-using-when-expressions)
-    - [Specifying `DisplayName`](#specifying-displayname)
   - [Specifying `Parameters`](#specifying-parameters)
   - [Specifying `Workspaces`](#specifying-workspaces)
   - [Emitting `Results`](#emitting-results)
@@ -600,22 +599,6 @@ The StepState for a skipped step looks like something similar to the below:
 ```
 Where `terminated.exitCode` is `0` and `terminationReason` is `Skipped` to indicate the Step exited successfully and was skipped. 
 
-#### Specifying `DisplayName`
-
-The `displayName` field is an optional field that allows you to add a user-facing name to the step that may be used to populate a UI.
-
-```yaml
-steps:
-  - name: ignore-failure-and-produce-a-result
-    displayName: "Ignore failure and produce a result"
-    onError: continue
-    image: busybox
-    script: |
-      echo -n 123 | tee $(results.result1.path)
-      exit 1
-      echo -n 456 | tee $(results.result2.path)
-```
-
 ### Specifying `Parameters`
 
 You can specify parameters, such as compilation flags or artifact names, that you want to supply to the `Task` at execution time.
@@ -1039,12 +1022,12 @@ As a general rule-of-thumb, if a result needs to be larger than a kilobyte, you 
 #### Larger `Results` using sidecar logs
 
 This is a beta feature which is guarded behind its own feature flag.  The `results-from` feature flag must be set to
-[`"sidecar-logs"`](additional-configs.md#enabling-larger-results-using-sidecar-logs) to enable larger results using sidecar logs.
+[`"sidecar-logs"`](./install.md#enabling-larger-results-using-sidecar-logs) to enable larger results using sidecar logs.
 
 Instead of using termination messages to store results, the taskrun controller injects a sidecar container which monitors
 the results of all the steps. The sidecar mounts the volume where results of all the steps are stored. As soon as it
 finds a new result, it logs it to std out. The controller has access to the logs of the sidecar container.
-**CAUTION**: we need you to enable access to [kubernetes pod/logs](additional-configs.md#enabling-larger-results-using-sidecar-logs).
+**CAUTION**: we need you to enable access to [kubernetes pod/logs](./install.md#enabling-larger-results-using-sidecar-logs).
 
 This feature allows users to store up to 4 KB per result by default. Because we are not limited by the size of the
 termination messages, users can have as many results as they require (or until the CRD reaches its limit). If the size
@@ -1052,7 +1035,7 @@ of a result exceeds this limit, then the TaskRun will be placed into a failed st
 exceeded the maximum allowed limit.`
 
 **Note**: If you require even larger results, you can specify a different upper limit per result by setting
-`max-result-size` feature flag to your desired size in bytes ([see instructions](additional-configs.md#enabling-larger-results-using-sidecar-logs)).
+`max-result-size` feature flag to your desired size in bytes ([see instructions](./install.md#enabling-larger-results-using-sidecar-logs)).
 **CAUTION**: the larger you make the size, more likely will the CRD reach its max limit enforced by the `etcd` server
 leading to bad user experience.
 

@@ -28,13 +28,40 @@ def fix_text(seg):
     if "{" in out or "}" in out:
         counts["jsx_curly_escaped"] += out.count("{") + out.count("}")
         out = out.replace("{", "&#123;").replace("}", "&#125;")
-    # 3/6. ALL angle brackets -> entity-escaped. Synced docs use no JSX, so the
-    # safe transform is to treat every < > as literal. NOTE: this degrades real
-    # raw-HTML tables/<br> to literal text (content-fidelity loss; see writeup).
+    # 3/6. Remaining angle brackets -> entity-escaped. By this point real HTML
+    # tables have already been converted to Markdown (see convert_tables), so
+    # what's left behind `<` is overwhelmingly placeholders (<name>,
+    # <key:value>) and stray/invalid HTML. Blanket-escaping keeps the build
+    # green. NOTE: non-table raw HTML (<br>, <a>, ...) still degrades to text.
     if "<" in out:
         counts["angle_escaped"] += out.count("<")
         out = out.replace("<", "&lt;")
     return out
+
+
+import shutil, subprocess
+HAS_PANDOC = shutil.which("pandoc") is not None
+TABLE_RE = re.compile(r"<table\b.*?</table>", re.I | re.S)
+
+def convert_tables(text):
+    """Convert raw HTML <table> blocks to GitHub-flavoured Markdown via pandoc
+    so they render natively in MDX instead of being escaped to literal text."""
+    if not HAS_PANDOC or "<table" not in text.lower():
+        return text
+    def repl(m):
+        html = m.group(0)
+        try:
+            md = subprocess.run(
+                ["pandoc", "-f", "html", "-t", "gfm"],
+                input=html, capture_output=True, text=True, timeout=20,
+            ).stdout.strip()
+            if md:
+                counts["html_table_converted"] += 1
+                return "\n\n" + md + "\n\n"
+        except Exception:
+            pass
+        return html
+    return TABLE_RE.sub(repl, text)
 
 def process(path):
     src = open(path, encoding="utf-8").read()
@@ -45,6 +72,9 @@ def process(path):
     if src2 != src:
         counts["hugo_shortcode_stripped"] += 1
         src = src2
+    # Convert raw HTML tables to Markdown so they render (the rest of the HTML
+    # is escaped later; tables are the highest-value, most-visible case).
+    src = convert_tables(src)
     lines = src.split("\n")
     in_fence = False
     fence_tok = None

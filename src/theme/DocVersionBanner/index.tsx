@@ -8,8 +8,11 @@ import policy from '@site/src/data/support-policy.json';
 type Props = WrapperProps<typeof DocVersionBannerType>;
 
 // PoC (tektoncd/website#732): per-component support/deprecation banner.
-// Driven by src/data/support-policy.json, which mirrors the per-component
-// supportEnds/LTS data already present in sync/config/<component>.yaml.
+// Driven by src/data/support-policy.json, which carries the REAL End-of-Life
+// dates from each component's upstream releases.md. Status (supported vs
+// deprecated) is COMPUTED from eol vs. today, so it never goes stale and we
+// don't hand-flag versions (which is how the earlier draft wrongly marked
+// still-supported LTS releases as deprecated).
 function SupportBanner(): ReactNode {
   let ctx: {pluginId?: string; version?: string} = {};
   try {
@@ -19,10 +22,14 @@ function SupportBanner(): ReactNode {
   }
   const comp = (policy as any)[ctx.pluginId ?? ''];
   const info = comp?.versions?.[ctx.version ?? ''];
-  if (!info || info.status === 'supported' || info.status === 'development') {
-    return null;
+  if (!info || !info.eol) {
+    return null; // unknown or development (main) -> rely on built-in banner
   }
-  const ends = info.supportEnds ? ` (support ended ${info.supportEnds})` : '';
+  const eol = new Date(info.eol);
+  const isDeprecated = eol.getTime() < Date.now();
+  if (!isDeprecated) {
+    return null; // still within support window -> no banner
+  }
   return (
     <div
       role="alert"
@@ -35,10 +42,11 @@ function SupportBanner(): ReactNode {
         margin: '0 0 1rem',
         fontSize: '0.95rem',
       }}>
-      <strong>⚠ Deprecated version.</strong> You are reading docs for a{' '}
-      <strong>{info.lts ? 'no-longer-supported LTS' : 'non-supported'}</strong>{' '}
-      release of <strong>{ctx.pluginId}</strong> {ctx.version}
-      {ends}. Supported policy: <em>{comp.policy}</em>. Consider upgrading.
+      <strong>⚠ End of life.</strong> You are reading docs for{' '}
+      <strong>{ctx.pluginId}</strong> {ctx.version}, a{' '}
+      {info.lts ? 'no-longer-supported LTS' : 'non-supported'} release
+      (EOL {info.eol}). Support policy: <em>{(policy as any).policy}</em>.
+      Please upgrade to a supported version.
     </div>
   );
 }

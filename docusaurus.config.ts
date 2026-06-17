@@ -71,7 +71,7 @@ const config: Config = {
           current: {label: 'main', path: 'main', banner: 'unreleased'},
           '1.12.x': {banner: 'none'},
           '1.9.x': {banner: 'none'},
-          '1.6.x': {banner: 'none'},
+          '1.0.x': {banner: 'none'},
         },
       },
     ],

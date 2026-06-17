@@ -33,8 +33,6 @@ installation.
   - [Pipelinerun with Affinity Assistant](#pipelineruns-with-affinity-assistant)
   - [TaskRuns with `imagePullBackOff` Timeout](#taskruns-with-imagepullbackoff-timeout)
   - [Disabling Inline Spec in TaskRun and PipelineRun](#disabling-inline-spec-in-taskrun-and-pipelinerun)
-  - [Exponential Backoff for TaskRun and CustomRun Creation](#exponential-backoff-for-taskrun-and-customrun-creation)
-  - [Limiting Step reference concurrency resolution](#limiting-step-reference-concurrency-resolution)
   - [Next steps](#next-steps)
 
 
@@ -486,6 +484,7 @@ The controller and webhook components are currently built for:
 
 - linux/amd64
 - linux/arm64
+- linux/arm (Arm v7)
 - linux/ppc64le (PowerPC)
 - linux/s390x (IBM Z)
 
@@ -731,86 +730,6 @@ data:
 Inline specifications can be disabled for specific resources only. To achieve that, set the disable-inline-spec flag to a comma-separated list of the desired resources. Valid values are pipeline, pipelinerun and taskrun.
 
 The default value of disable-inline-spec is "", which means inline specification is enabled in all cases.
-
-## Exponential Backoff for TaskRun and CustomRun Creation
-
-By default, when Tekton Pipelines attempts to create a TaskRun or CustomRun resource and encounters an error, the controller will requeue the PipelineRun for another reconciliation attempt after a short delay. However, this may not be sufficient in a heavily loaded or busy cluster, where transient errors such as webhook timeouts or network issues are more likely to occur.
-
-To improve robustness in environments where webhook timeouts or network errors are possible, you can enable an **exponential backoff retry strategy** for TaskRun and CustomRun creation by setting the `enable-wait-exponential-backoff` feature flag to `"true"` in the `feature-flags` ConfigMap:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: feature-flags
-  namespace: tekton-pipelines
-data:
-  enable-wait-exponential-backoff: "true"
-```
-
-When this flag is enabled, the controller will retry TaskRun and CustomRun creation using an exponential backoff strategy if it encounters admission webhook timeouts (e.g., `"timeout"`).
-
-This helps mitigate failures due to temporary unavailability of webhooks or network disruptions.
-
-### Backoff Configuration
-
-You can further customize the backoff parameters (such as initial duration, factor, steps, and cap) using the `wait-exponential-backoff` ConfigMap:
-
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: wait-exponential-backoff
-  namespace: tekton-pipelines
-data:
-  duration: "1s"
-  factor: "2.0"
-  jitter: "0.0"
-  steps: "10"
-  cap: "30s"
-```
-
-- **duration**: Initial wait time before the first retry.
-- **factor**: Multiplier for each subsequent retry interval.
-- **steps**: Maximum number of retry attempts.
-- **cap**: Maximum wait time between retries.
-
-### Default Behavior
-
-If `enable-wait-exponential-backoff` is not set or is set to `"false"`, the controller will rely on its standard reconcilation loop to retry TaskRun or CustomRun creation after a short delay when failures occur due to webhook or network errors.
-
----
-
-**Note:** This feature is especially useful in clusters where webhook services (such as Kyverno, OPA, or custom admission controllers) may be temporarily unavailable or slow to respond.
-
-## Limiting Step reference concurrency resolution
-
-You can control the maximum number of concurrent goroutines that the Tekton controller uses to resolve steps referencing a `StepAction` via the `step.ref` field.
-
-When a `TaskRun` is processed, any step that uses a `ref` to a remote `StepAction` (e.g., one stored in a git repository or an OCI registry) triggers a fetch request. If a `Task` contains many such steps, the controller will attempt to resolve them all in parallel. This can lead to a "thundering herd" problem, potentially overwhelming remote servers, hitting API rate limits, saturating network resources, or placing excessive load on the Kubernetes API server and the Tekton controller itself.
-
-To mitigate this, Tekton Pipelines includes a configurable concurrency limit. By default, a sensible limit is already in place to ensure stability.
-
-#### Default Behavior
-
-If the `default-step-ref-concurrency-limit` key is not set in the `config-defaults` ConfigMap, Tekton Pipelines defaults to a concurrency limit of **5**. This provides a safe, built-in throttle without requiring any initial configuration.
-
-#### Overriding the Default
-
-You can override this default to better suit your environment's capacity (e.g., a high-capacity, self-hosted git server might allow for a higher limit). To change the limit, set the `default-step-ref-concurrency-limit` key in your `config-defaults` `ConfigMap`.
-
-**Example**: To increase the concurrency limit to 20:
-```yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: config-defaults
-  namespace: tekton-pipelines
-data:
-  default-step-ref-concurrency-limit: "20"
-```
-
----
 
 ## Next steps
 

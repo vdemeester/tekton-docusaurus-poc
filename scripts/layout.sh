@@ -37,6 +37,6 @@ setup_instance() {
   echo "  current md: $(find "$id" -name '*.md' | wc -l)"
 }
 
-setup_instance pipelines pipeline-main "1.12.x:pipeline-v1.12" "1.9.x:pipeline-v1.9" "1.6.x:pipeline-v1.6"
+setup_instance pipelines pipeline-main "1.12.x:pipeline-v1.12" "1.9.x:pipeline-v1.9" "1.0.x:pipeline-v1.0"
 setup_instance operator operator-main "0.79.x:operator-v0.79" "0.78.x:operator-v0.78" "0.76.x:operator-v0.76"
 echo "Done."
