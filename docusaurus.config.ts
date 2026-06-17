@@ -15,10 +15,10 @@ const config: Config = {
 
   future: {v4: true},
 
-  url: 'https://tekton.dev',
-  baseUrl: '/',
-  organizationName: 'tektoncd',
-  projectName: 'website',
+  url: 'https://vdemeester.github.io',
+  baseUrl: '/tekton-docusaurus-poc/',
+  organizationName: 'vdemeester',
+  projectName: 'tekton-docusaurus-poc',
 
   onBrokenLinks: 'warn',
   onBrokenMarkdownLinks: 'warn',
