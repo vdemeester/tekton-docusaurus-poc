@@ -68,7 +68,7 @@ const config: Config = {
         sidebarPath: './sidebars.ts',
         lastVersion: 'current',
         versions: {
-          current: {label: 'main', path: 'main', banner: 'unreleased'},
+          current: {label: 'main', banner: 'unreleased'},
         },
       },
     ],
@@ -81,7 +81,7 @@ const config: Config = {
         sidebarPath: './sidebars.ts',
         lastVersion: 'current',
         versions: {
-          current: {label: 'main', path: 'main', banner: 'unreleased'},
+          current: {label: 'main', banner: 'unreleased'},
         },
       },
     ],
