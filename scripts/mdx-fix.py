@@ -34,8 +34,21 @@ def fix_text(seg):
     # <key:value>) and stray/invalid HTML. Blanket-escaping keeps the build
     # green. NOTE: non-table raw HTML (<br>, <a>, ...) still degrades to text.
     if "<" in out:
-        counts["angle_escaped"] += out.count("<")
-        out = out.replace("<", "&lt;")
+        # Preserve the Docusaurus Tabs/TabItem JSX tags we emit from Docsy
+        # `tabs` shortcodes; escape every other `<`.
+        TABS_TAG = re.compile(r"</?(?:Tabs|TabItem)(?:\s[^>]*)?>")
+        parts = []
+        last = 0
+        for m in TABS_TAG.finditer(out):
+            seg = out[last:m.start()]
+            counts["angle_escaped"] += seg.count("<")
+            parts.append(seg.replace("<", "&lt;"))
+            parts.append(m.group(0))
+            last = m.end()
+        seg = out[last:]
+        counts["angle_escaped"] += seg.count("<")
+        parts.append(seg.replace("<", "&lt;"))
+        out = "".join(parts)
     return out
 
 
@@ -101,6 +114,56 @@ def extract_frontmatter(text):
     counts["frontmatter_extracted"] += 1
     return "---\n" + "\n".join(fm) + "\n---\n\n" + rest
 
+# --- Docsy shortcode handling (readfile / tabs / pageinfo / comment) ----------
+# These compose content at build time the way sync.py + Docsy do. Stripping them
+# (the naive approach) silently DROPS content — most visibly the Google Cloud /
+# OpenShift install tabs, whose bodies live in the website repo's vendor/ tree.
+VENDOR_ROOT = os.path.join(os.path.dirname(__file__), "..", "_src", "vendor")
+LEAD_COMMENT_FM = re.compile(r"\A\s*<!--\s*\n---\s*\n.*?\n---\s*\n-->\s*\n?", re.S)
+
+def _read_vendor(path):
+    rel = path.strip().strip('"').lstrip("/")
+    if rel.startswith("vendor/"):
+        rel = rel[len("vendor/"):]
+    full = os.path.normpath(os.path.join(VENDOR_ROOT, rel))
+    try:
+        txt = open(full, encoding="utf-8").read()
+        return LEAD_COMMENT_FM.sub("", txt).strip()
+    except Exception:
+        return None
+
+READFILE = re.compile(r'\{\{%\s*readfile\s+(?:file=)?"([^"]+)"\s*%\}\}')
+PAGEINFO = re.compile(r"\{\{%\s*pageinfo\s*%\}\}(.*?)\{\{%\s*/pageinfo\s*%\}\}", re.S)
+DOCSY_COMMENT = re.compile(r"\{\{%\s*comment\s*%\}\}.*?\{\{%\s*/comment\s*%\}\}", re.S)
+TAB_OPEN = re.compile(r'\{\{%\s*tab\s+"([^"]+)"\s*%\}\}')
+
+def handle_shortcodes(text):
+    """Translate Docsy build-time shortcodes to Docusaurus equivalents."""
+    text, n = DOCSY_COMMENT.subn("", text)
+    if n: counts["docsy_comment_dropped"] += n
+    def _rf(m):
+        content = _read_vendor(m.group(1))
+        if content is None:
+            return ""
+        counts["readfile_inlined"] += 1
+        return "\n\n" + content + "\n\n"
+    text = READFILE.sub(_rf, text)
+    def _pi(m):
+        counts["pageinfo_admonition"] += 1
+        return "\n\n:::info\n\n" + m.group(1).strip() + "\n\n:::\n\n"
+    text = PAGEINFO.sub(_pi, text)
+    if "{{% tabs %}}" in text or "{{%tabs%}}" in text:
+        text = re.sub(r"\{\{%\s*tabs\s*%\}\}", "\n\n<Tabs>", text)
+        text = re.sub(r"\{\{%\s*/tabs\s*%\}\}", "</Tabs>\n\n", text)
+        text = re.sub(r"\{\{%\s*/tab\s*%\}\}", "\n</TabItem>\n", text)
+        def _tab(m):
+            label = m.group(1)
+            val = re.sub(r"[^a-z0-9]+", "-", label.lower()).strip("-")
+            return f'\n<TabItem value="{val}" label="{label}">\n'
+        text = TAB_OPEN.sub(_tab, text)
+        counts["tabs_converted"] += 1
+    return text
+
 def process(path):
     src = open(path, encoding="utf-8").read()
     original = src
@@ -112,7 +175,11 @@ def process(path):
     # (weight). Without this, Docusaurus falls back to the filename for the
     # sidebar label and ignores ordering. (264/339 files use this convention.)
     src = extract_frontmatter(src)
-    # Global pre-pass: Hugo/Docsy shortcodes ({{< >}} / {{% %}}) are layout
+    # Translate Docsy build-time shortcodes (readfile/tabs/pageinfo/comment) to
+    # Docusaurus equivalents BEFORE the generic strip below — otherwise their
+    # content (e.g. the GCP/OpenShift install tabs) is silently dropped.
+    src = handle_shortcodes(src)
+    # Global pre-pass: remaining Hugo/Docsy shortcodes ({{< >}} / {{% %}}) are
     # directives that never belong in code output. Strip them everywhere so a
     # mis-detected code fence can't leave raw `{{` to break the MDX parser.
     src2 = re.sub(r"\{\{[<%].*?[%>]\}\}", "", src, flags=re.S)
@@ -169,6 +236,15 @@ def process(path):
         out_lines.append(rebuilt)
 
     new = "\n".join(out_lines)
+    # Inject the Tabs/TabItem imports after the front matter when used.
+    if "<Tabs>" in new and "import Tabs" not in new:
+        imports = ("import Tabs from '@theme/Tabs';\n"
+                   "import TabItem from '@theme/TabItem';\n")
+        fm = re.match(r"\A---\n.*?\n---\n", new, re.S)
+        if fm:
+            new = new[:fm.end()] + "\n" + imports + new[fm.end():]
+        else:
+            new = imports + "\n" + new
     if new != original:
         open(path, "w", encoding="utf-8").write(new)
         counts["files_modified"] += 1
