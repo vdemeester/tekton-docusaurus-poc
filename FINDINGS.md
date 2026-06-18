@@ -24,9 +24,14 @@ fit for the tekton.dev revamp vs the current Hugo + Docsy + `sync.py` stack.
   rendered via a swizzled `DocVersionBanner` that computes supported-vs-EOL at
   render time.
 - **HTML→Markdown table conversion** via pandoc in the preprocessing pass.
+- **Hugo front-matter extraction** — synced docs hide their front matter in an
+  HTML comment; the fixer turns `linkTitle`/`weight` into Docusaurus
+  `sidebar_label`/`sidebar_position` (264/339 files), as `sync.py` does.
 - **Local search** (`@easyops-cn/docusaurus-search-local`).
 - **Theming spike** — Tekton blue via Infima CSS variables only.
 - **Homepage + Community + Blog** pages mirroring the current tekton.dev IA.
+- **Live deployment** — public on GitHub Pages with an auto-deploy workflow:
+  **https://vdemeester.github.io/tekton-docusaurus-poc/**
 
 Reproduce: `npm install && bash scripts/layout.sh && python3 scripts/mdx-fix.py && npm run build`
 (`scripts/mdx-fix.py` uses **pandoc** for HTML→Markdown table conversion.)
@@ -82,6 +87,30 @@ Reproduce: `npm install && bash scripts/layout.sh && python3 scripts/mdx-fix.py 
   is **not** good out of the box for many components and needs this kind of
   contextual treatment.
 
+### Front-matter convention of synced docs — A CORE SYNC-PARITY FINDING
+Upstream Tekton component docs (`tektoncd/pipeline`, `tektoncd/operator`, …)
+store their Hugo front matter **commented out** so it doesn't render on GitHub:
+```
+<!--
+---
+linkTitle: "Container Contract"
+weight: 401
+---
+-->
+```
+- `sync.py` **uncomments** this block so Hugo/Docsy gets `linkTitle` (nav label)
+  and `weight` (ordering). A naive MDX pass that converts `<!-- -->` to an MDX
+  comment **hides the front matter from Docusaurus**, which then falls back to
+  the **filename** for the sidebar label and **ignores ordering** entirely.
+- This affects **264 / 339 files** — i.e. it is the norm, not an edge case.
+- **Fix in PoC:** `mdx-fix.py` extracts the commented block and emits real
+  Docusaurus front matter: `linkTitle → sidebar_label` (+ `title` when the body
+  has no H1, to avoid a duplicate heading) and `weight → sidebar_position`.
+- **Takeaway:** any Docusaurus migration must replicate this specific `sync.py`
+  behaviour. It is the clearest example that the synced content carries
+  **Hugo/Docsy-specific conventions** the website tooling is responsible for
+  translating — the work doesn't disappear, it moves into remark/preprocessing.
+
 ### MDX migration of synced Markdown — THE REAL COST
 The synced component Markdown is **not MDX-clean**. A preprocessing pass
 (`scripts/mdx-fix.py`, the remark-plugin-equivalent) was required. Per-category
@@ -89,9 +118,10 @@ fixes across 341 files:
 
 | Category | Fixes | Notes |
 |---|---|---|
-| `<!-- -->` HTML comments → `{/* */}` | 600 | License header on ~every file |
+| Hugo front matter extracted (comment → real) | 264 | `linkTitle`→`sidebar_label`, `weight`→`sidebar_position` |
+| `<!-- -->` HTML comments → `{/* */}` | 72 | remaining non-front-matter comments |
 | Angle brackets `<...>` escaped | ~77,900 | placeholders `<name>`, `<key:value>`, stray HTML |
-| Curly braces `{ }` escaped | 904 | MDX reads `{` as a JS expression |
+| Curly braces `{ }` escaped | 376 | MDX reads `{` as a JS expression |
 | HTML `<table>` → Markdown (pandoc) | 744 | so tables actually render (see below) |
 | Hugo/Docsy shortcodes stripped | 28 files | `{{< >}}` / `{{% tabs %}}` tab blocks |
 | Files modified | 276 / 341 | ~80% of files needed at least one fix |
@@ -154,20 +184,44 @@ post-processing. There is **no official Hugo→Docusaurus converter**;
 - Only real action on migration: **re-point kapa sources + sitemap** to the new
   URL structure and re-crawl. Same redirect/SEO concern any migration has.
 
+### Deployment & hosting — WORKS, with a baseUrl gotcha
+- The PoC is **publicly hosted on GitHub Pages**
+  (**https://vdemeester.github.io/tekton-docusaurus-poc/**) via a GitHub Actions
+  workflow that installs pandoc, runs `layout.sh` + `mdx-fix.py`, builds, and
+  deploys. This proves the throwaway reproduces in a **clean CI environment**,
+  not just locally.
+- **baseUrl gotcha (real finding):** the contextual version-dropdown logic
+  matched the URL with `^/(pipelines|operator|guides)`, which silently broke on
+  GitHub Pages because every path is prefixed with the project baseUrl
+  (`/tekton-docusaurus-poc/…`). Client-side path logic must be **baseUrl-aware**.
+  tekton.dev itself is at domain root, but any staging/preview-path deploy is
+  not — so this class of bug must be watched for.
+- **Account-level custom-domain caveat (ops, not Docusaurus):** project pages
+  redirect to whatever custom domain the user/org Pages site declares; a stale
+  `CNAME` elsewhere can hijack the URL. Worth noting for tekton.dev's own DNS.
+
 ### Static-serving quirk
 - `docusaurus serve` 404s on version paths containing dots (`/pipelines/1.9.x/`)
   while `/pipelines/main/` works — `.x` is treated as a file extension. The HTML
-  builds fine; recommend sanitizing version slugs (e.g. `v1.9` not `1.9.x`) to
-  avoid host-specific edge cases.
+  builds fine and **GitHub Pages serves these paths correctly** (directory
+  `index.html`), so it's a local-`serve`-only quirk. Still, recommend
+  sanitizing version slugs (e.g. `v1.9` not `1.9.x`) to avoid host edge cases.
 
 ## Bottom line
 
 Confirms the going-in hypothesis: **versioning is genuinely cleaner in
 Docusaurus, and it uniquely enables website-owned cross-component guides — but
-the real cost is (1) MDX migration of synced Markdown (80% of files; 42 with
-real HTML needing manual conversion), (2) rebuilding the sync post-processing as
-remark plugins, (3) link rewriting + redirects, and (4) a weaker out-of-box
-versioned-search story.**
+the real cost is the content pipeline, not the framework.** Specifically:
+1. **MDX migration of synced Markdown** (~80% of files touched), including
+   replicating `sync.py`'s **front-matter extraction** (264/339 files hide Hugo
+   front matter in comments) and converting **raw HTML tables** (solved here
+   with pandoc; non-table inline HTML still degrades and needs per-file work).
+2. **Rebuilding the sync post-processing as remark plugins** — the fix-category
+   catalogue above *is* the spec.
+3. **Link rewriting + redirects** (Hugo relative links / `{{< ref >}}` break).
+4. A **weaker out-of-box versioned-search** story (#191).
+5. Smaller traps: contextual version-switcher UX, EOL data must be computed,
+   and baseUrl-aware client logic.
 
 For a CNCF project where Hugo+Docsy is the norm and the proposed visual refresh
 is achievable in Hugo, the bar to migrate is real cost vs. the versioning/IA
