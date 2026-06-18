@@ -87,6 +87,26 @@ Reproduce: `npm install && bash scripts/layout.sh && python3 scripts/mdx-fix.py 
   is **not** good out of the box for many components and needs this kind of
   contextual treatment.
 
+### Docsy build-time shortcodes — CONTENT LOSS without translation
+The synced docs use Docsy shortcodes that **compose content at build time**:
+
+| Shortcode | What it does | Without handling |
+|---|---|---|
+| `{{% readfile "/vendor/..." %}}` | Inlines content from the **website repo's** `vendor/` tree (GCP/OpenShift install steps, disclaimers) | **Content silently dropped** — the install page lost 2 of 3 platform tabs entirely |
+| `{{% tabs %}}`/`{{% tab "X" %}}` | Platform-specific tabbed sections (K8s / Google Cloud / OpenShift) | Flattened to just the first tab |
+| `{{% pageinfo %}}` | Info/disclaimer banner | Removed |
+| `{{% comment %}}` | Build-time-only comments | (dropped, harmless) |
+
+- **Fix in PoC:** `readfile` → inline the vendor partial; `tabs`/`tab` →
+  Docusaurus `<Tabs>`/`<TabItem>` (first-class, documented feature with synced
+  `groupId` tab groups — actually **better** than Docsy's); `pageinfo` →
+  `:::info` admonition; `comment` → dropped.
+- **Scope:** `readfile` appears in 4 files, `tabs` in 12, `pageinfo` in 4.
+- **Key insight:** the synced docs reference content that **only exists in the
+  website repo** (`content/en/vendor/`). Any migration must bring those vendor
+  partials along and replicate the composition. This is invisible until you
+  compare the rendered output against the live site.
+
 ### Front-matter convention of synced docs — A CORE SYNC-PARITY FINDING
 Upstream Tekton component docs (`tektoncd/pipeline`, `tektoncd/operator`, …)
 store their Hugo front matter **commented out** so it doesn't render on GitHub:
@@ -119,11 +139,13 @@ fixes across 341 files:
 | Category | Fixes | Notes |
 |---|---|---|
 | Hugo front matter extracted (comment → real) | 264 | `linkTitle`→`sidebar_label`, `weight`→`sidebar_position` |
+| Docsy shortcodes translated | 12+4+4 | `tabs`→`<Tabs>`, `readfile`→inline, `pageinfo`→`:::info` |
+| Vendor partials inlined (`readfile`) | 12 | GCP/OpenShift install steps, disclaimers |
 | `<!-- -->` HTML comments → `{/* */}` | 72 | remaining non-front-matter comments |
 | Angle brackets `<...>` escaped | ~77,900 | placeholders `<name>`, `<key:value>`, stray HTML |
 | Curly braces `{ }` escaped | 376 | MDX reads `{` as a JS expression |
 | HTML `<table>` → Markdown (pandoc) | 744 | so tables actually render (see below) |
-| Hugo/Docsy shortcodes stripped | 28 files | `{{< >}}` / `{{% tabs %}}` tab blocks |
+| Hugo/Docsy shortcodes stripped (remaining) | 28 files | `{{< >}}` shortcodes not covered above |
 | Files modified | 276 / 341 | ~80% of files needed at least one fix |
 
 **Raw HTML tables — solved with pandoc.** Many synced files (the v1.9 README,
@@ -214,10 +236,12 @@ Docusaurus, and it uniquely enables website-owned cross-component guides — but
 the real cost is the content pipeline, not the framework.** Specifically:
 1. **MDX migration of synced Markdown** (~80% of files touched), including
    replicating `sync.py`'s **front-matter extraction** (264/339 files hide Hugo
-   front matter in comments) and converting **raw HTML tables** (solved here
-   with pandoc; non-table inline HTML still degrades and needs per-file work).
+   front matter in comments), converting **raw HTML tables** (solved with
+   pandoc; non-table inline HTML still degrades), and translating **Docsy
+   build-time shortcodes** (`readfile`/`tabs`/`pageinfo` — without which
+   vendor content like the GCP/OpenShift install tabs is silently dropped).
 2. **Rebuilding the sync post-processing as remark plugins** — the fix-category
-   catalogue above *is* the spec.
+   catalogue above *is* the spec (front-matter, shortcodes, tables, escaping).
 3. **Link rewriting + redirects** (Hugo relative links / `{{< ref >}}` break).
 4. A **weaker out-of-box versioned-search** story (#191).
 5. Smaller traps: contextual version-switcher UX, EOL data must be computed,
