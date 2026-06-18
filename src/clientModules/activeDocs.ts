@@ -4,7 +4,9 @@
 // components grows.
 function setActiveDocs(pathname) {
   let active = '';
-  const m = pathname.match(/^\/(pipelines|operator|guides)(\/|$)/);
+  // Match the component segment regardless of any baseUrl prefix
+  // (e.g. /tekton-docusaurus-poc/pipelines/... on GitHub Pages).
+  const m = pathname.match(/(?:^|\/)(pipelines|operator|guides)(\/|$)/);
   if (m) active = m[1];
   document.documentElement.setAttribute('data-active-docs', active);
 }
