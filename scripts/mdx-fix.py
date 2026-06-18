@@ -63,8 +63,55 @@ def convert_tables(text):
         return html
     return TABLE_RE.sub(repl, text)
 
+# Leading commented-out Hugo front matter: <!-- \n --- \n ... \n --- \n -->
+FM_RE = re.compile(r"\A\s*<!--\s*\n---\s*\n(.*?)\n---\s*\n-->\s*\n?", re.S)
+
+def _yaml_val(body, key):
+    m = re.search(rf"^{key}:\s*(.+?)\s*$", body, re.M)
+    if not m:
+        return None
+    v = m.group(1).strip()
+    if (v.startswith('"') and v.endswith('"')) or (v.startswith("'") and v.endswith("'")):
+        v = v[1:-1]
+    return v
+
+def extract_frontmatter(text):
+    """Turn the upstream commented-out Hugo front matter into real Docusaurus
+    front matter (sidebar_label from linkTitle, sidebar_position from weight).
+    This mirrors what sync.py does for Hugo, and fixes filename-as-title."""
+    m = FM_RE.match(text)
+    if not m:
+        return text
+    body = m.group(1)
+    link_title = _yaml_val(body, "linkTitle") or _yaml_val(body, "title")
+    weight = _yaml_val(body, "weight")
+    rest = text[m.end():]
+    has_h1 = re.search(r"^#\s+\S", rest, re.M) is not None
+    fm = []
+    if link_title:
+        safe = link_title.replace("'", "''")
+        fm.append(f"sidebar_label: '{safe}'")
+        # Only set title when the body has no H1, to avoid a duplicate heading.
+        if not has_h1:
+            fm.append(f"title: '{safe}'")
+    if weight and re.fullmatch(r"-?\d+", weight):
+        fm.append(f"sidebar_position: {weight}")
+    if not fm:
+        return rest
+    counts["frontmatter_extracted"] += 1
+    return "---\n" + "\n".join(fm) + "\n---\n\n" + rest
+
 def process(path):
     src = open(path, encoding="utf-8").read()
+    original = src
+    # Front matter extraction: upstream Tekton docs carry their Hugo front matter
+    # COMMENTED OUT at the top (so it doesn't render on GitHub):
+    #     <!--\n---\nlinkTitle: "..."\nweight: N\n---\n-->
+    # sync.py uncomments this for Hugo/Docsy. Docusaurus needs REAL front matter,
+    # so extract it and emit sidebar_label (linkTitle) + sidebar_position
+    # (weight). Without this, Docusaurus falls back to the filename for the
+    # sidebar label and ignores ordering. (264/339 files use this convention.)
+    src = extract_frontmatter(src)
     # Global pre-pass: Hugo/Docsy shortcodes ({{< >}} / {{% %}}) are layout
     # directives that never belong in code output. Strip them everywhere so a
     # mis-detected code fence can't leave raw `{{` to break the MDX parser.
@@ -122,7 +169,7 @@ def process(path):
         out_lines.append(rebuilt)
 
     new = "\n".join(out_lines)
-    if new != src:
+    if new != original:
         open(path, "w", encoding="utf-8").write(new)
         counts["files_modified"] += 1
 
